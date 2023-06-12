@@ -12,6 +12,9 @@ print("Iterator: ",iterator)
 if "index" in st.session_state: # check if the index variable exists in the session state object
     global_index = st.session_state.index.as_query_engine() # create a query engine from the index
     
+if not os.path.exists(upload_directory):
+    os.makedirs(upload_directory)
+    
 
 # ------------------------------------Code for setting API Key-------------------------------------
 def button_click(user_api_key):
