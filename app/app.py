@@ -61,6 +61,7 @@ def rebuild_index(from_directory):
     print("rebuild_index Called: ",iterator)
     global global_index
     document = SimpleDirectoryReader(from_directory).load_data()
+    index_temp = GPTVectorStoreIndex(api_key=os.environ.get("OPENAI_API_KEY"))     ###### Temp
     st.session_state.index = GPTVectorStoreIndex.from_documents(document)
     global_index = st.session_state.index.as_query_engine()
     
