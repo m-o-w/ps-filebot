@@ -60,4 +60,4 @@ jobs:
         with:
           app-name: 'PS-File-Bot'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_14447D0A57F442B38F867618AD64AC60 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_16606A2FAACB4AABB4393262C84A45D5 }}
