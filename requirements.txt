@@ -1,3 +1,4 @@
 streamlit
 llama_index
 langchain==0.0.188
+pypdf
