@@ -52,6 +52,7 @@ def delete_file(file_path):
     print("delete_file Called: ",iterator)
     if os.path.exists(file_path):
         os.remove(file_path)
+        st.session_state.pop('index')
         st.experimental_rerun()
     else:
         st.sidebar.error("File not found")
