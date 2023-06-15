@@ -15,7 +15,6 @@ if "index" in st.session_state: # check if the index variable exists in the sess
 if not os.path.exists(upload_directory):
     os.makedirs(upload_directory)
     
-
 # ------------------------------------Code for setting API Key-------------------------------------
 def button_click(user_api_key):
     if len(user_api_key) < 30:
@@ -52,7 +51,8 @@ def delete_file(file_path):
     print("delete_file Called: ",iterator)
     if os.path.exists(file_path):
         os.remove(file_path)
-        st.session_state.pop('index')
+        if "index" in st.session_state:
+            st.session_state.pop('index')
         st.experimental_rerun()
     else:
         st.sidebar.error("File not found")
@@ -129,5 +129,3 @@ def main():
 if __name__ == "__main__":
     print("__name__ Called: ",iterator)
     main()
-
-
