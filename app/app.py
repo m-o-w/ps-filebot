@@ -33,7 +33,7 @@ if os.environ.get("OPENAI_API_KEY") is None:
         button_click(user_api_key)
 else:
     st.sidebar.success("API Key Loaded")
-    reload_button = st.sidebar.button("Reload Key")
+    reload_button = st.sidebar.button("Delete Key")
     if reload_button:
         os.environ.pop("OPENAI_API_KEY")
         st.experimental_rerun()
