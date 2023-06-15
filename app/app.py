@@ -44,6 +44,8 @@ def save_uploaded_file(uploaded_file):
     print("save_uploaded_file Called: ",iterator)
     with open(os.path.join(upload_directory, uploaded_file.name), "wb") as file:
         file.write(uploaded_file.getbuffer())
+        if "index" in st.session_state:
+            st.session_state.pop('index')
         print("file.write Called: ",iterator)
 
 # FileManagement Delete file
