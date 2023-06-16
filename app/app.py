@@ -106,7 +106,7 @@ def main():
     print("main Called: ",iterator)
             
     #Start StreamLit
-    st.title("File AI Bot")
+    st.title("PS File AI Bot (V12)")
     form = st.form("Input box", clear_on_submit=True)
     question = form.text_input("Send message", placeholder="Your question here")
     submit_button = form.form_submit_button("Send")
