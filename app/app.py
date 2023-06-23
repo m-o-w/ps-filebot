@@ -1,19 +1,45 @@
 import os
 from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 import streamlit as st
-from config import upload_directory
+from config import upload_directory, container_connection_string, inbound_container, index_container
 import random
+from azure.storage.blob import BlobServiceClient
+from llama_index import StorageContext, load_index_from_storage
 
 # Load index from session if found
 global_index = None
 iterator = random.randint(1, 99)
 print("Iterator: ",iterator)
 
+# Create method to load index from blob storage
+def load_index():
+    print("load_index Called: ",iterator)
+    global global_index
+    blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
+    container_client = blob_service_client.get_container_client(index_container)
+    blob_list = container_client.list_blobs(prefix=index_container+"\\")
+    for blob in blob_list:
+        # Get a blob client for each blob
+        blob_client = container_client.get_blob_client(blob.name)
+        # Download each blob to local folder
+        #with open(os.path.join(local_folder, blob.name), "wb") as file:
+        with open(blob.name, "wb") as file:
+            file.write(blob_client.download_blob().readall())
+    
+    storage_context = StorageContext.from_defaults(persist_dir="index")
+    index = load_index_from_storage(storage_context)
+    st.session_state.index = index
+    st.sidebar.success(f"Document Count: {len(index.docstore.docs)}")
+    print("load_index from blob: ",iterator)
+
 if "index" in st.session_state: # check if the index variable exists in the session state object
     global_index = st.session_state.index.as_query_engine() # create a query engine from the index
     
 if not os.path.exists(upload_directory):
     os.makedirs(upload_directory)
+
+if not os.path.exists("index"):
+    os.makedirs("index")
     
 # ------------------------------------Code for setting API Key-------------------------------------
 def button_click(user_api_key):
@@ -41,13 +67,11 @@ else:
 
 # FileManagement Save file
 def save_uploaded_file(uploaded_file):
-    print("save_uploaded_file Called: ",iterator)
-    with open(os.path.join(upload_directory, uploaded_file.name), "wb") as file:
-        file.write(uploaded_file.getbuffer())
-        if "index" in st.session_state:
-            st.session_state.pop('index')
-        print("file.write Called: ",iterator)
-
+    blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
+    blob_client = blob_service_client.get_blob_client(container=inbound_container, blob=uploaded_file.name)
+    blob_client.upload_blob(uploaded_file)
+    return
+    
 # FileManagement Delete file
 def delete_file(file_path):
     print("delete_file Called: ",iterator)
@@ -88,25 +112,22 @@ def answer_question(question):
     st.info(response)
 
 # File upload section
-uploaded_file = st.sidebar.file_uploader("Upload files")
+uploaded_file = st.sidebar.file_uploader("Upload files to Blob")
+print("uploaded_file: ",uploaded_file)
 if uploaded_file:
     save_uploaded_file(uploaded_file)
     del uploaded_file
-        
-# Display uploaded files and provide delete option
-st.sidebar.header("Uploaded Files")
-files = os.listdir(upload_directory)
-for file_name in files:
-    file_path = os.path.join(upload_directory, file_name)
-    delete_button = st.sidebar.button(f"Delete: {file_name}")
-    if delete_button:
-        delete_file(file_path)
+
+# Create reload button on sidebar
+reload_button = st.sidebar.button("Reload Index")
+if reload_button:
+    load_index()
         
 def main():
     print("main Called: ",iterator)
             
     #Start StreamLit
-    st.title("PS File AI Bot (V12)")
+    st.title("PS File AI Bot (V13)")
     form = st.form("Input box", clear_on_submit=True)
     question = form.text_input("Send message", placeholder="Your question here")
     submit_button = form.form_submit_button("Send")
@@ -117,17 +138,16 @@ def main():
         if os.environ.get("OPENAI_API_KEY") is None:
             st.error("Please set your API key in the side-bar")
             return
-        files = os.listdir(upload_directory)
-        if len(files) == 0:
-            st.sidebar.error("Please upload files")
-            return
+        
         if "index" not in st.session_state: # check if the index variable exists in the session state object
-            index_files()
-            st.sidebar.success("Index rebuild complete")
+            st.sidebar.success("Loading Index")
+            load_index()
+        if "index" not in st.session_state: # check if the index variable exists in the session state object
+            st.sidebar.error("Index not found")
+            return
         if "index" in st.session_state: # check if the index variable exists in the session state object
             answer_question(question) 
         
-
 if __name__ == "__main__":
     print("__name__ Called: ",iterator)
     main()
