@@ -1,6 +1,6 @@
 streamlit
 llama_index
-langchain==0.0.197
+langchain==0.0.188
 pypdf
 azure-storage-blob
 openai
