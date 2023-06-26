@@ -5,6 +5,8 @@ from config import upload_directory, container_connection_string, inbound_contai
 import random
 from azure.storage.blob import BlobServiceClient
 from llama_index import StorageContext, load_index_from_storage
+from langchain import OpenAI
+
 
 # Load index from session if found
 global_index = None
@@ -146,6 +148,8 @@ def main():
         if os.environ.get("OPENAI_API_KEY") is None:
             st.error("Please set your API key in the side-bar")
             return
+        else:
+            OpenAI.api_key = os.environ.get("OPENAI_API_KEY")
         
         if "index" not in st.session_state: # check if the index variable exists in the session state object
             st.sidebar.success("Loading Index")
