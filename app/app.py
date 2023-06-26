@@ -14,7 +14,7 @@ print("Iterator: ",iterator)
 # Create method to load index from blob storage
 def load_index():
     print("load_index Called: ",iterator)
-    global global_index
+    delete_files_in_directory(index_container)
     blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
     container_client = blob_service_client.get_container_client(index_container)
     blob_list = container_client.list_blobs(prefix=index_container+"\\")
@@ -33,13 +33,20 @@ def load_index():
     print("load_index from blob: ",iterator)
 
 if "index" in st.session_state: # check if the index variable exists in the session state object
-    global_index = st.session_state.index.as_query_engine() # create a query engine from the index
+    global_index = st.session_state.index # create a query engine from the index
     
 if not os.path.exists(upload_directory):
     os.makedirs(upload_directory)
 
 if not os.path.exists("index"):
     os.makedirs("index")
+
+def delete_files_in_directory(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+            print(f"Deleted file: {file_path}")
     
 # ------------------------------------Code for setting API Key-------------------------------------
 def button_click(user_api_key):
@@ -107,8 +114,9 @@ def index_files():
         
 # Generate response from index
 def answer_question(question):
-    print("answer_question Called: ",iterator)                        
-    response = global_index.query(question+"?")
+    print("answer_question Called: ",iterator)
+    query_engine=global_index.as_query_engine(openai_api_key=os.environ["OPENAI_API_KEY"])
+    response = query_engine.query(question+"?")
     st.info(response)
 
 # File upload section
