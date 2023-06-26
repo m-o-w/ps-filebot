@@ -3,3 +3,4 @@ llama_index
 langchain==0.0.197
 pypdf
 azure-storage-blob
+openai
