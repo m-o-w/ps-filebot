@@ -13,6 +13,9 @@ global_index = None
 iterator = random.randint(1, 99)
 print("Iterator: ",iterator)
 
+os.makedirs(os.path.dirname(inbound_container), exist_ok=True)
+os.makedirs(os.path.dirname(index_container), exist_ok=True)
+
 # Get files from inbound blob
 def get_files_from_blob():
     print("get_files_from_blob Called: ",iterator)
