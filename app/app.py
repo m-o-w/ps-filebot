@@ -13,8 +13,10 @@ global_index = None
 iterator = random.randint(1, 99)
 print("Iterator: ",iterator)
 
-os.makedirs(os.path.dirname(inbound_container), exist_ok=True)
-os.makedirs(os.path.dirname(index_container), exist_ok=True)
+if not os.path.exists(inbound_container):
+    os.makedirs(inbound_container)
+if not os.path.exists(index_container):
+    os.makedirs(index_container)
 
 # Get files from inbound blob
 def get_files_from_blob():
@@ -298,4 +300,3 @@ def main():
 if __name__ == "__main__":
     print("__name__ Called: ",iterator)
     main()
-
