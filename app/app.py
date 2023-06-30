@@ -13,36 +13,6 @@ global_index = None
 iterator = random.randint(1, 99)
 print("Iterator: ",iterator)
 
-def reporcess_index():
-    get_index_from_container()
-    get_files_from_blob()
-    inbound_contains_files = folder_contains_files(inbound_container)
-    if inbound_contains_files:
-        index_contains_files = folder_contains_files(index_container)
-        if index_contains_files:
-            index = load_index()
-            new_index = merge_file_with_index(index, inbound_container)
-            new_index.storage_context.persist(persist_dir=index_container)
-            print(f"###############  Index created. Docs count index: {new_index.docstore.docs}")
-            copy_index_to_blob(index_container, container_connection_string)
-            archive_blob(container_connection_string, inbound_container, archive_container)
-            st.sidebar.success(f"Document Count: {len(index.docstore.docs)}")
-            delete_files_in_directory(inbound_container)
-            return
-        else:
-            create_new_index(inbound_container, index_container)
-            index = load_index()
-            copy_index_to_blob(index_container, container_connection_string)
-            archive_blob(container_connection_string, inbound_container, archive_container)
-            st.sidebar.success(f"Document Count: {len(index.docstore.docs)}")
-            delete_files_in_directory(inbound_container)
-    else:
-        load_index()
-        if "index" in st.session_state:
-            index = st.session_state.index
-            st.sidebar.success(f"Document Count: {len(index.docstore.docs)}")
-        else: st.sidebar.error("Please upload files")
-
 # Get files from inbound blob
 def get_files_from_blob():
     print("get_files_from_blob Called: ",iterator)
@@ -174,6 +144,37 @@ if uploaded_file:
 reload_button = st.sidebar.button("Reload Index")
 if reload_button:
     reporcess_index()
+
+def reporcess_index():
+    get_index_from_container()
+    get_files_from_blob()
+    inbound_contains_files = folder_contains_files(inbound_container)
+    if inbound_contains_files:
+        index_contains_files = folder_contains_files(index_container)
+        if index_contains_files:
+            index = load_index()
+            new_index = merge_file_with_index(index, inbound_container)
+            new_index.storage_context.persist(persist_dir=index_container)
+            print(f"###############  Index created. Docs count index: {new_index.docstore.docs}")
+            copy_index_to_blob(index_container, container_connection_string)
+            archive_blob(container_connection_string, inbound_container, archive_container)
+            st.sidebar.success(f"Document Count: {len(index.docstore.docs)}")
+            delete_files_in_directory(inbound_container)
+            return
+        else:
+            create_new_index(inbound_container, index_container)
+            index = load_index()
+            copy_index_to_blob(index_container, container_connection_string)
+            archive_blob(container_connection_string, inbound_container, archive_container)
+            st.sidebar.success(f"Document Count: {len(index.docstore.docs)}")
+            delete_files_in_directory(inbound_container)
+    else:
+        load_index()
+        if "index" in st.session_state:
+            index = st.session_state.index
+            st.sidebar.success(f"Document Count: {len(index.docstore.docs)}")
+        else: st.sidebar.error("Please upload files")
+
         
 def main():
     print("main Called: ",iterator)
