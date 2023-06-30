@@ -140,6 +140,94 @@ if uploaded_file:
     save_uploaded_file(uploaded_file)
     del uploaded_file
 
+def create_new_index(inbound_dir_name, index_dir_name):
+    print(f"###############  Creating new index: {index_dir_name}")
+    print(f"###############  Reading from DIR: {inbound_dir_name}")
+    loader = SimpleDirectoryReader(inbound_dir_name, recursive=True, exclude_hidden=True)
+    documents = loader.load_data()
+    print(f"Documents count loaded: {len(documents)}")
+    index = GPTVectorStoreIndex.from_documents(documents=documents)
+    index.storage_context.persist(persist_dir=index_dir_name)
+    print(f"###############  Index created. Docs count index: {index.docstore.docs}")
+
+def merge_file_with_index(index, inbound_dir_name):
+    loader = SimpleDirectoryReader(inbound_dir_name, recursive=True, exclude_hidden=True)
+    new_documents = loader.load_data()
+    for docs in new_documents:
+        index.update_ref_doc(docs)
+    print(f"Documents count loaded: {len(new_documents)}")
+    print(f"###############  Index updated. Docs count in index: {index.docstore.docs}")
+    return index
+
+def create_new_index(inbound_dir_name, index_dir_name):
+    print(f"###############  Creating new index: {index_dir_name}")
+    print(f"###############  Reading from DIR: {inbound_dir_name}")
+    loader = SimpleDirectoryReader(inbound_dir_name, recursive=True, exclude_hidden=True)
+    documents = loader.load_data()
+    print(f"Documents count loaded: {len(documents)}")
+    index = GPTVectorStoreIndex.from_documents(documents=documents)
+    index.storage_context.persist(persist_dir=index_dir_name)
+    print(f"###############  Index created. Docs count index: {index.docstore.docs}")   
+
+def archive_blob(container_connection_string, source_container, archive_container):
+    # Define the connection string and blob names
+    blob_connection_string = container_connection_string
+    source_container_name = source_container
+    destination_container_name = archive_container
+    
+    print(f"###############  Connection string: {blob_connection_string}")
+    print(f"###############  Source container: {source_container_name}")
+    print(f"###############  Destination container: {destination_container_name}")
+    
+    # Move blob to archive container and delete source blob
+    blob_service_client = BlobServiceClient.from_connection_string(blob_connection_string)
+    # Get the source and destination container client
+    source_container_client = blob_service_client.get_container_client(source_container_name)
+    destination_container_client = blob_service_client.get_container_client(destination_container_name)
+    # Get the source blob client
+    blob_list = source_container_client.list_blobs()
+    #blob_list = container_client.list_blobs()
+    for blob in blob_list:
+        filename = blob.name
+        print(f"###############  Archiving blob: {filename}")
+        source_blob_client = source_container_client.get_blob_client(filename)
+        destination_blob_client = destination_container_client.get_blob_client(filename)
+        destination_blob_client.start_copy_from_url(source_blob_client.url)        
+        # Delete the source blob
+        source_blob_client.delete_blob()
+
+def copy_index_to_blob(index_dir_name, container_connection_string):
+    blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
+    # Get the source and destination container client
+    target_container_client = blob_service_client.get_container_client(index_container) 
+    # Define the connection string and blob names
+    folder_path = index_dir_name
+    for file_name in os.listdir(folder_path):
+        print(file_name)
+        blob_client = target_container_client.get_blob_client(index_container+"/"+file_name)
+        with open(os.path.join(folder_path, file_name), "rb") as data:
+                blob_client.upload_blob(data, overwrite=True)
+                print("Uploaded to Azure Blob storage as blob:\n\t" + file_name) 
+            
+# Read file dir and index files
+def get_index_from_container():
+    # read files from blob storage container 'inbound'
+    print("get_index_from_container Called: ",iterator)
+    print("index_container: ",index_container)
+    delete_files_in_directory(index_container)
+    blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
+    container_client = blob_service_client.get_container_client(index_container)
+    blob_list = container_client.list_blobs(prefix=index_container+"\\")
+    #blob_list = container_client.list_blobs()
+    for blob in blob_list:
+        print("Blob found: ",blob.name)
+        # Get a blob client for each blob
+        blob_client = container_client.get_blob_client(blob.name)
+        # Download each blob to local folder
+        with open(blob.name, "wb") as file:
+            print("Writing : ",file)
+            file.write(blob_client.download_blob().readall())
+
 def reporcess_index():
     get_index_from_container()
     get_files_from_blob()
@@ -202,94 +290,6 @@ def main():
             return
         if "index" in st.session_state: # check if the index variable exists in the session state object
             answer_question(question) 
-
-def create_new_index(inbound_dir_name, index_dir_name):
-    print(f"###############  Creating new index: {index_dir_name}")
-    print(f"###############  Reading from DIR: {inbound_dir_name}")
-    loader = SimpleDirectoryReader(inbound_dir_name, recursive=True, exclude_hidden=True)
-    documents = loader.load_data()
-    print(f"Documents count loaded: {len(documents)}")
-    index = GPTVectorStoreIndex.from_documents(documents=documents)
-    index.storage_context.persist(persist_dir=index_dir_name)
-    print(f"###############  Index created. Docs count index: {index.docstore.docs}")
-
-# Read file dir and index files
-def get_index_from_container():
-    # read files from blob storage container 'inbound'
-    print("get_index_from_container Called: ",iterator)
-    print("index_container: ",index_container)
-    delete_files_in_directory(index_container)
-    blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
-    container_client = blob_service_client.get_container_client(index_container)
-    blob_list = container_client.list_blobs(prefix=index_container+"\\")
-    #blob_list = container_client.list_blobs()
-    for blob in blob_list:
-        print("Blob found: ",blob.name)
-        # Get a blob client for each blob
-        blob_client = container_client.get_blob_client(blob.name)
-        # Download each blob to local folder
-        with open(blob.name, "wb") as file:
-            print("Writing : ",file)
-            file.write(blob_client.download_blob().readall())
-
-def merge_file_with_index(index, inbound_dir_name):
-    loader = SimpleDirectoryReader(inbound_dir_name, recursive=True, exclude_hidden=True)
-    new_documents = loader.load_data()
-    for docs in new_documents:
-        index.update_ref_doc(docs)
-    print(f"Documents count loaded: {len(new_documents)}")
-    print(f"###############  Index updated. Docs count in index: {index.docstore.docs}")
-    return index
-
-def create_new_index(inbound_dir_name, index_dir_name):
-    print(f"###############  Creating new index: {index_dir_name}")
-    print(f"###############  Reading from DIR: {inbound_dir_name}")
-    loader = SimpleDirectoryReader(inbound_dir_name, recursive=True, exclude_hidden=True)
-    documents = loader.load_data()
-    print(f"Documents count loaded: {len(documents)}")
-    index = GPTVectorStoreIndex.from_documents(documents=documents)
-    index.storage_context.persist(persist_dir=index_dir_name)
-    print(f"###############  Index created. Docs count index: {index.docstore.docs}")   
-
-def archive_blob(container_connection_string, source_container, archive_container):
-    # Define the connection string and blob names
-    blob_connection_string = container_connection_string
-    source_container_name = source_container
-    destination_container_name = archive_container
-    
-    print(f"###############  Connection string: {blob_connection_string}")
-    print(f"###############  Source container: {source_container_name}")
-    print(f"###############  Destination container: {destination_container_name}")
-    
-    # Move blob to archive container and delete source blob
-    blob_service_client = BlobServiceClient.from_connection_string(blob_connection_string)
-    # Get the source and destination container client
-    source_container_client = blob_service_client.get_container_client(source_container_name)
-    destination_container_client = blob_service_client.get_container_client(destination_container_name)
-    # Get the source blob client
-    blob_list = source_container_client.list_blobs()
-    #blob_list = container_client.list_blobs()
-    for blob in blob_list:
-        filename = blob.name
-        print(f"###############  Archiving blob: {filename}")
-        source_blob_client = source_container_client.get_blob_client(filename)
-        destination_blob_client = destination_container_client.get_blob_client(filename)
-        destination_blob_client.start_copy_from_url(source_blob_client.url)        
-        # Delete the source blob
-        source_blob_client.delete_blob()
-
-def copy_index_to_blob(index_dir_name, container_connection_string):
-    blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
-    # Get the source and destination container client
-    target_container_client = blob_service_client.get_container_client(index_container) 
-    # Define the connection string and blob names
-    folder_path = index_dir_name
-    for file_name in os.listdir(folder_path):
-        print(file_name)
-        blob_client = target_container_client.get_blob_client(index_container+"/"+file_name)
-        with open(os.path.join(folder_path, file_name), "rb") as data:
-                blob_client.upload_blob(data, overwrite=True)
-                print("Uploaded to Azure Blob storage as blob:\n\t" + file_name) 
 
 
 if __name__ == "__main__":
