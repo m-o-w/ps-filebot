@@ -140,11 +140,6 @@ if uploaded_file:
     save_uploaded_file(uploaded_file)
     del uploaded_file
 
-# Create reload button on sidebar
-reload_button = st.sidebar.button("Reload Index")
-if reload_button:
-    reporcess_index()
-
 def reporcess_index():
     get_index_from_container()
     get_files_from_blob()
@@ -175,6 +170,10 @@ def reporcess_index():
             st.sidebar.success(f"Document Count: {len(index.docstore.docs)}")
         else: st.sidebar.error("Please upload files")
 
+# Create reload button on sidebar
+reload_button = st.sidebar.button("Reload Index")
+if reload_button:
+    reporcess_index()
         
 def main():
     print("main Called: ",iterator)
