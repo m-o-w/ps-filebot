@@ -17,6 +17,7 @@ if os.environ.get("OPENAI_API_KEY") is not None:
     
 
 def copy_index_to_blob(index_container, container_connection_string):
+    print("copy_index_to_blob Called: ",iterator)
     blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
     # Get the source and destination container client
     target_container_client = blob_service_client.get_container_client(index_container)
@@ -30,6 +31,7 @@ def copy_index_to_blob(index_container, container_connection_string):
             print("Uploaded to Azure Blob storage as blob:\n\t" + file_name)
     
 def archive_inbound_files():
+    print("archive_inbound_files Called: ",iterator)
     # list all files in local inbound folder
     inbound_files = os.listdir(inbound_container)
     print(f"###############  Inbound files: {inbound_files}")
@@ -40,6 +42,7 @@ def archive_inbound_files():
      
 def archive_blob(filename, container_connection_string, source_container, archive_container):
     # Define the connection string and blob names
+    print("archive_blob Called: ",iterator)
     blob_connection_string = container_connection_string
     source_container_name = source_container
     destination_container_name = archive_container
@@ -63,6 +66,7 @@ def archive_blob(filename, container_connection_string, source_container, archiv
 
 # Get all filers from blob storage 'inbound' container
 def get_files_from_blob_storage():
+    print("get_files_from_blob_storage Called: ",iterator)
     blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
     container_client = blob_service_client.get_container_client(inbound_container)
     blob_list = container_client.list_blobs()
@@ -76,6 +80,7 @@ def get_files_from_blob_storage():
 
 
 def merge_file_with_index(index, inbound_dir_name):
+    print("merge_file_with_index Called: ",iterator)
     loader = SimpleDirectoryReader(inbound_dir_name, recursive=True, exclude_hidden=True)
     new_documents = loader.load_data()
     for docs in new_documents:
@@ -87,6 +92,9 @@ def merge_file_with_index(index, inbound_dir_name):
 # Create method to load index from blob storage
 def load_index():
     print("load_index Called: ",iterator)
+    if os.environ.get("OPENAI_API_KEY") is None:
+        st.error("Please set your API key in the side-bar")
+        return
     delete_files_in_directory(index_container)
     blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
     container_client = blob_service_client.get_container_client(index_container)
