@@ -7,7 +7,7 @@ from azure.storage.blob import BlobServiceClient
 from llama_index import StorageContext, load_index_from_storage
 import openai
 
-
+st.set_page_config(page_title="PS File Hunter")
 # Load index from session if found
 global_index = None
 iterator = random.randint(1, 99)
@@ -232,7 +232,6 @@ def main():
             
     #Start StreamLit
     st.title("PS File AI Bot (V13)")
-    st.set_page_config(page_title="PS File Hunter")
     form = st.form("Input box", clear_on_submit=True)
     question = form.text_input("Send message", placeholder="Your question here")
     submit_button = form.form_submit_button("Send")
