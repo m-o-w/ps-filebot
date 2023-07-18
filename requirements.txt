@@ -3,3 +3,4 @@ llama_index
 langchain
 openai
 azure-storage-blob
+pypdf
