@@ -67,6 +67,7 @@ def archive_blob(filename, container_connection_string, source_container, archiv
 # Get all filers from blob storage 'inbound' container
 def get_files_from_blob_storage():
     print("get_files_from_blob_storage Called: ",iterator)
+    file_found = False
     blob_service_client = BlobServiceClient.from_connection_string(container_connection_string)
     container_client = blob_service_client.get_container_client(inbound_container)
     blob_list = container_client.list_blobs()
@@ -77,6 +78,8 @@ def get_files_from_blob_storage():
         with open(os.path.join(inbound_container, blob.name), "wb") as file:
         #with open(blob.name, "wb") as file:
             file.write(blob_client.download_blob().readall())
+        file_found = True
+    return file_found
 
 
 def merge_file_with_index(index, inbound_dir_name):
@@ -111,12 +114,13 @@ def load_index():
     storage_context = StorageContext.from_defaults(persist_dir="index")
     index = load_index_from_storage(storage_context)
     
-    get_files_from_blob_storage()
-    index = merge_file_with_index(index, inbound_container)
-    index.storage_context.persist(persist_dir=index_container)
-    copy_index_to_blob(index_container, container_connection_string)
-    archive_inbound_files()
-    delete_files_in_directory(inbound_container)
+    is_file_found= get_files_from_blob_storage()
+    if is_file_found:
+        index = merge_file_with_index(index, inbound_container)
+        index.storage_context.persist(persist_dir=index_container)
+        copy_index_to_blob(index_container, container_connection_string)
+        archive_inbound_files()
+        delete_files_in_directory(inbound_container)
     
     st.session_state.index = index
     st.sidebar.success(f"Document Count: {len(index.docstore.docs)}")
